@@ -115,23 +115,25 @@ const createAllJson = async (modules) => {
             instance: module.codeinstance
         })).activites;
         for (let activity of activities) { //TODO: remove boostrap, follow up and kick off (date need to be acquired from planning)
-            all.push({
-                dtstart: convertDate(activity.begin),
-                dtend: convertDate(activity.end),
-                summary: activity.title,
-                location: module.location_title,
-                categories: activity.type_title,
-                description: `${activity.title} | Timeline`
-            });
-            if (activity.end_register)
-                all.push({
-                    dtstart: convertDate(module.begin),
-                    dtend: convertDate(module.end_register),
-                    summary: module.title,
-                    location: module.location_title,
-                    categories: "Registration End",
-                    description: `${module.title} | Registration end`
-                })
+            if (activity.end_register && activity.type_title !== "Bootstrap") {
+                all.push(
+                    {
+                        dtstart: convertDate(activity.begin),
+                        dtend: convertDate(activity.end),
+                        summary: activity.title,
+                        location: module.location_title,
+                        categories: activity.type_title,
+                        description: `${activity.title} | Timeline`
+                    },
+                    {
+                        dtstart: convertDate(module.begin),
+                        dtend: convertDate(module.end_register),
+                        summary: module.title,
+                        location: module.location_title,
+                        categories: "Registration End",
+                        description: `${module.title} | Registration end`
+                    });
+            }
         }
     }
     return all;
@@ -166,8 +168,8 @@ const jsonToIcs = (json) => {
     let icsContent = "BEGIN:VCALENDAR\n";
     json.forEach(event => {
         icsContent += "BEGIN:VEVENT\n";
-        icsContent += `DTSTART:TZID=${timezone}:${event.dtstart}\n`;
-        icsContent += `DTEND:TZID=${timezone}:${event.dtend}\n`;
+        icsContent += `DTSTART;TZID=${timezone}:${event.dtstart}\n`;
+        icsContent += `DTEND;TZID=${timezone}:${event.dtend}\n`;
         icsContent += `SUMMARY:${event.summary}\n`;
         icsContent += `LOCATION:${event.location}\n`;
         icsContent += `CATEGORIES:${event.categories}\n`;
