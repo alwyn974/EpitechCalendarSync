@@ -84,9 +84,10 @@ const getModules = async () => {
     return module.items;
 }
 
-const convertDate = (dateStr) => {
-    let date = new Date(dateStr).toISOString();
-    //date = date.toISOString().replace(/[-:]/g, "");
+const convertDate = (dateStr, removeOneDay = false) => {
+    let date = new Date(dateStr);
+    if (removeOneDay) date.setDate(date.getDate() - 1);
+    date = date.toISOString()/*.replace(/[-:]/g, "")*/;
     date = date.substring(0, date.length - 5);
     return date;
 }
@@ -103,7 +104,7 @@ const createAllJson = async (modules) => {
                 categories: "Module",
                 description: `${module.title} | ${module.code} | Timeline`
             }, {
-                dtstart: convertDate(module.begin),
+                dtstart: convertDate(module.end_register, true),
                 dtend: convertDate(module.end_register),
                 summary: module.title + (module.num !== "1" ? ` ${module.num}` : "") + " Registration",
                 location: module.location_title,
@@ -115,7 +116,7 @@ const createAllJson = async (modules) => {
                 module: module.code,
                 instance: module.codeinstance
             })).activites;
-            for (let activity of activities) { //TODO: remove boostrap, follow up and kick off (date need to be acquired from planning)
+            for (let activity of activities) {
                 if (activity.end_register && !activity.title.includes("#EXPERIMENTATION") && activity.type_title !== "Bootstrap") {
                     all.push(
                         {
@@ -127,7 +128,7 @@ const createAllJson = async (modules) => {
                             description: `${activity.title} | Timeline`
                         },
                         {
-                            dtstart: convertDate(activity.begin),
+                            dtstart: convertDate(activity.end_register, true),
                             dtend: convertDate(activity.end_register),
                             summary: activity.title + " Registration",
                             location: module.location_title,
