@@ -84,11 +84,14 @@ const getModules = async () => {
     return module.items;
 }
 
-const convertDate = (dateStr, removeOneDay = false) => {
+const convertDate = (dateStr, removeOneDay = false, replace = false) => {
     let date = new Date(dateStr);
-    if (removeOneDay) date.setDate(date.getDate() - 1);
-    date = date.toISOString()/*.replace(/[-:]/g, "")*/;
-    date = date.substring(0, date.length - 5);
+    if (removeOneDay)
+        date.setDate(date.getDate() - 1);
+    if (replace)
+        date = date.toLocaleString().replace(/[/:]/g, "").replace(", ", "T");
+    else
+        date = date.toISOString();
     return date;
 }
 
@@ -164,8 +167,8 @@ const jsonToIcs = (json) => {
         return date <= endDate;
     });
     json.forEach(object => {
-        object.dtstart = object.dtstart.replace(/[-:]/g, "");
-        object.dtend = object.dtend.replace(/[-:]/g, "");
+        object.dtstart = convertDate(new Date(object.dtstart), false, true);
+        object.dtend = convertDate(new Date(object.dtend), false, true);
     });
     fs.writeFileSync("calendar.json", JSON.stringify(json, null, 2));
     let icsContent = "BEGIN:VCALENDAR\n";
