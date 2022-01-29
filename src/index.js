@@ -94,45 +94,47 @@ const convertDate = (dateStr) => {
 const createAllJson = async (modules) => {
     let all = [];
     for (let module of modules) {
-        all.push({
-            dtstart: convertDate(module.begin),
-            dtend: convertDate(module.end),
-            summary: module.title + (module.num !== "1" ? ` ${module.num}` : ""),
-            location: module.location_title,
-            categories: "Module",
-            description: `${module.title} | ${module.code} | Timeline`
-        }, {
-            dtstart: convertDate(module.begin),
-            dtend: convertDate(module.end_register),
-            summary: module.title + (module.num !== "1" ? ` ${module.num}` : ""),
-            location: module.location_title,
-            categories: "Registration End",
-            description: `${module.title} | ${module.code} | Registration end`
-        })
-        let activities = (await intra.getModule({
-            scolaryear: parseInt(user.scolaryear),
-            module: module.code,
-            instance: module.codeinstance
-        })).activites;
-        for (let activity of activities) { //TODO: remove boostrap, follow up and kick off (date need to be acquired from planning)
-            if (activity.end_register && activity.type_title !== "Bootstrap") {
-                all.push(
-                    {
-                        dtstart: convertDate(activity.begin),
-                        dtend: convertDate(activity.end),
-                        summary: activity.title,
-                        location: module.location_title,
-                        categories: activity.type_title,
-                        description: `${activity.title} | Timeline`
-                    },
-                    {
-                        dtstart: convertDate(module.begin),
-                        dtend: convertDate(module.end_register),
-                        summary: module.title,
-                        location: module.location_title,
-                        categories: "Registration End",
-                        description: `${module.title} | Registration end`
-                    });
+        if (module.location_title === "La Réunion") {
+            all.push({
+                dtstart: convertDate(module.begin),
+                dtend: convertDate(module.end),
+                summary: module.title + (module.num !== "1" ? ` ${module.num}` : ""),
+                location: module.location_title,
+                categories: "Module",
+                description: `${module.title} | ${module.code} | Timeline`
+            }, {
+                dtstart: convertDate(module.begin),
+                dtend: convertDate(module.end_register),
+                summary: module.title + (module.num !== "1" ? ` ${module.num}` : "") + " Registration",
+                location: module.location_title,
+                categories: "Registration End",
+                description: `${module.title} | ${module.code} | Registration end`
+            })
+            let activities = (await intra.getModule({
+                scolaryear: parseInt(user.scolaryear),
+                module: module.code,
+                instance: module.codeinstance
+            })).activites;
+            for (let activity of activities) { //TODO: remove boostrap, follow up and kick off (date need to be acquired from planning)
+                if (activity.end_register && !activity.title.includes("#EXPERIMENTATION") && activity.type_title !== "Bootstrap") {
+                    all.push(
+                        {
+                            dtstart: convertDate(activity.begin),
+                            dtend: convertDate(activity.end),
+                            summary: activity.title,
+                            location: module.location_title,
+                            categories: activity.type_title,
+                            description: `${activity.title} | Timeline`
+                        },
+                        {
+                            dtstart: convertDate(activity.begin),
+                            dtend: convertDate(activity.end_register),
+                            summary: activity.title + " Registration",
+                            location: module.location_title,
+                            categories: "Registration End",
+                            description: `${activity.title} | Registration end`
+                        });
+                }
             }
         }
     }
@@ -156,7 +158,7 @@ const createFinalData = async () => {
 
 const jsonToIcs = (json) => {
     let date = new Date();
-    json.filter(object => {
+    json = json.filter(object => {
         let endDate = new Date(object.dtend);
         return date <= endDate;
     });
