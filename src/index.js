@@ -6,6 +6,7 @@ let intra = null;
 let autologin = "";
 let user = null;
 let timezone = "Indian/Reunion"
+let instance_location = "FR/RUN";
 let all, registered, modules, projects, kickoffs, followups, bootstraps;
 
 /**
@@ -78,27 +79,44 @@ const setupEpitechJs = async () => {
  */
 const getModules = async () => {
     user = await intra.getUser();
+    instance_location = user.location;
     let module = await intra.filterCourses({
         scolaryears: [parseInt(user.scolaryear)]
     });
     return module.items;
 }
 
+/**
+ * Return the date for ics
+ * @param dateStr the date
+ * @param removeOneDay only for registration
+ * @param replace for the json
+ * @returns {Date}
+ */
 const convertDate = (dateStr, removeOneDay = false, replace = false) => {
     let date = new Date(dateStr);
     if (removeOneDay)
         date.setDate(date.getDate() - 1);
-    if (replace)
-        date = date.toLocaleString().replace(/[/:]/g, "").replace(", ", "T");
+    if (replace) {
+        let year = date.getFullYear();
+        let month = date.getMonth() < 10 ? `0${date.getMonth()}` : date.getMonth();
+        let day = date.getDate() < 10 ? `0${date.getDate()}` : date.getDate();
+        date = `${year}${month}${day}T${date.toLocaleTimeString().replace(/:/g, "")}`;
+    }
     else
         date = date.toISOString();
     return date;
 }
 
+/**
+ * Create a json of modules/projects
+ * @param modules the modules
+ * @returns {Promise<*[]>}
+ */
 const createAllJson = async (modules) => {
     let all = [];
     for (let module of modules) {
-        if (module.location_title === "La Réunion") {
+        if (module.instance_location === instance_location) {
             all.push({
                 dtstart: convertDate(module.begin),
                 dtend: convertDate(module.end),
