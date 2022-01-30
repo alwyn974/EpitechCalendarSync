@@ -132,7 +132,7 @@ const createAllJson = async (modules) => {
                 categories: "Registration End",
                 description: `${module.title} | ${module.code} | Registration end`
             })
-            /*let activities = (await intra.getModule({
+            let activities = (await intra.getModule({
                 scolaryear: parseInt(user.scolaryear),
                 module: module.code,
                 instance: module.codeinstance
@@ -157,7 +157,7 @@ const createAllJson = async (modules) => {
                             description: `${activity.title} | Registration end`
                         });
                 }
-            }*/
+            }
         }
     }
     return all;
@@ -179,7 +179,6 @@ const createFinalData = async () => {
 }
 
 const jsonToIcs = (json) => {
-    fs.writeFileSync("raw_calendar.json", JSON.stringify(json, null, 2));
     let date = new Date();
     json = json.filter(object => {
         let endDate = new Date(object.dtend);
