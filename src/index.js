@@ -44,6 +44,7 @@ const parseArgs = () => {
     autologin = argv.autologin;
     all = argv.all;
     registered = argv.registered;
+    timezone = argv.timezone;
     modules = argv.module;
     projects = argv.project;
     kickoffs = argv.kickoff;
@@ -52,7 +53,7 @@ const parseArgs = () => {
     console.log("Autologin Link:", autologin);
     console.log("All projects and modules:", all);
     console.log("Only Registered:", registered);
-    console.log("TimeZone: ", timezone);
+    console.log("TimeZone:", timezone);
     console.log("Only Module:", modules);
     console.log("Only Project:", projects);
     console.log("Only Kick-Off:", kickoffs);
@@ -82,6 +83,11 @@ const setupEpitechJs = async () => {
 const getModules = async () => {
     user = await intra.getUser();
     instance_location = user.location;
+    let a = {};
+    a = intra;
+    a = a.request;
+    a = a.client;
+    a.defaults.headers.Cookie = `tz=${timezone}`;
     let module = await intra.filterCourses({
         scolaryears: [parseInt(user.scolaryear)]
     });
@@ -93,17 +99,18 @@ const getModules = async () => {
  * @param dateStr the date
  * @param removeOneDay only for registration
  * @param replace for the json
- * @returns {Date}
+ * @returns {string}
  */
 const convertDate = (dateStr, removeOneDay = false, replace = false) => {
-    let date = zonedTimeToUtc(dateStr, timezone);
-    if (removeOneDay) date.setDate(date.getDate() - 1);
-    let year = date.getFullYear();
-    let month = (date.getMonth() + 1) < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1;
-    let day = date.getDate() < 10 ? `0${date.getDate()}` : date.getDate();
-    let hours = date.getHours() < 10 ? `0${date.getHours()}` : date.getHours();
-    let minutes = date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes();
-    let seconds = date.getSeconds() < 10 ? `0${date.getSeconds()}` : date.getSeconds();
+    let date = zonedTimeToUtc(dateStr, "UTC");
+    if (removeOneDay)
+        date.setUTCDate(date.getUTCDate() - 1);
+    let year = date.getUTCFullYear();
+    let month = (date.getUTCMonth() + 1) < 10 ? `0${date.getUTCMonth() + 1}` : date.getUTCMonth() + 1;
+    let day = date.getUTCDate() < 10 ? `0${date.getUTCDate()}` : date.getUTCDate();
+    let hours = date.getUTCHours() < 10 ? `0${date.getUTCHours()}` : date.getUTCHours();
+    let minutes = date.getUTCMinutes() < 10 ? `0${date.getUTCMinutes()}` : date.getUTCMinutes();
+    let seconds = date.getUTCSeconds() < 10 ? `0${date.getUTCSeconds()}` : date.getUTCSeconds();
     if (replace)
         date = `${year}${month}${day}T${hours}${minutes}${seconds}`;
     else
@@ -141,19 +148,19 @@ const createAllJson = async (modules) => {
                 instance: module.codeinstance
             })).activites;
             for (let activity of activities) {
-                if (activity.end_register && !activity.title.includes("#EXPERIMENTATION") && activity.type_title !== "Bootstrap") {
+                if (activity.end_register && !activity.title.includes("#EXPERIMENTATION") && activity.type_title !== "Bootstrap" && activity.codeacti === "acti-499675") {
                     all.push(
                         {
-                            dtstart: convertDate(activity.begin),
-                            dtend: convertDate(activity.end),
+                            dtstart: convertDate(activity.begin, false, false),
+                            dtend: convertDate(activity.end, false, false),
                             summary: activity.title,
                             location: module.location_title,
                             categories: activity.type_title,
                             description: `${activity.title} | Timeline`
                         },
                         {
-                            dtstart: convertDate(activity.end_register, true),
-                            dtend: convertDate(activity.end_register),
+                            dtstart: convertDate(activity.end_register, true, false),
+                            dtend: convertDate(activity.end_register, false, false),
                             summary: activity.title + " Registration",
                             location: module.location_title,
                             categories: "Registration End",
