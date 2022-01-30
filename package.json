@@ -10,6 +10,8 @@
   "author": "",
   "license": "SEE IN LICENSE.md",
   "dependencies": {
+    "date-fns": "^2.28.0",
+    "date-fns-tz": "^1.2.2",
     "epitech.js": "^0.1.6",
     "yargs": "^17.3.1"
   }

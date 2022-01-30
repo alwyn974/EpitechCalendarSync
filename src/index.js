@@ -2,6 +2,8 @@ const {RawIntra} = require("epitech.js");
 const yargs = require("yargs/yargs");
 const {hideBin} = require("yargs/helpers");
 const fs = require("fs");
+const { zonedTimeToUtc, utcToZonedTime, format } = require("date-fns-tz")
+
 let intra = null;
 let autologin = "";
 let user = null;
@@ -94,17 +96,18 @@ const getModules = async () => {
  * @returns {Date}
  */
 const convertDate = (dateStr, removeOneDay = false, replace = false) => {
-    let date = new Date(dateStr);
-    if (removeOneDay)
-        date.setDate(date.getDate() - 1);
-    if (replace) {
-        let year = date.getFullYear();
-        let month = date.getMonth() < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1;
-        let day = date.getDate() < 10 ? `0${date.getDate()}` : date.getDate();
-        date = `${year}${month}${day}T${date.toLocaleTimeString().replace(/:/g, "")}`;
-    }
+    let date = zonedTimeToUtc(dateStr, timezone);
+    if (removeOneDay) date.setDate(date.getDate() - 1);
+    let year = date.getFullYear();
+    let month = (date.getMonth() + 1) < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1;
+    let day = date.getDate() < 10 ? `0${date.getDate()}` : date.getDate();
+    let hours = date.getHours() < 10 ? `0${date.getHours()}` : date.getHours();
+    let minutes = date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes();
+    let seconds = date.getSeconds() < 10 ? `0${date.getSeconds()}` : date.getSeconds();
+    if (replace)
+        date = `${year}${month}${day}T${hours}${minutes}${seconds}`;
     else
-        date = date.toISOString();
+        date = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     return date;
 }
 
@@ -185,8 +188,8 @@ const jsonToIcs = (json) => {
         return date <= endDate;
     });
     json.forEach(object => {
-        object.dtstart = convertDate(new Date(object.dtstart), false, true);
-        object.dtend = convertDate(new Date(object.dtend), false, true);
+        object.dtstart = convertDate(object.dtstart, false, true);
+        object.dtend = convertDate(object.dtend, false, true);
     });
     fs.writeFileSync("calendar.json", JSON.stringify(json, null, 2));
     let icsContent = "BEGIN:VCALENDAR\n";
