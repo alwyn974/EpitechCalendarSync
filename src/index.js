@@ -91,6 +91,7 @@ const getModules = async () => {
     let module = await intra.filterCourses({
         scolaryears: [parseInt(user.scolaryear)]
     });
+    module.items = module.items.filter(item => item.scolaryear === parseInt(user.scolaryear))
     return module.items;
 }
 
@@ -148,7 +149,7 @@ const createAllJson = async (modules) => {
                 instance: module.codeinstance
             })).activites;
             for (let activity of activities) {
-                if (activity.end_register && !activity.title.includes("#EXPERIMENTATION") && activity.type_title !== "Bootstrap" && activity.codeacti === "acti-499675") {
+                if (activity.end_register && !activity.title.includes("#EXPERIMENTATION") && activity.type_title !== "Bootstrap") {
                     all.push(
                         {
                             dtstart: convertDate(activity.begin, false, false),
