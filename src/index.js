@@ -1,4 +1,5 @@
 const {RawIntra} = require("epitech.js");
+const {PuppeteerAuthProvider} = require("@epitech.js/puppeteer-auth-provider")
 const yargs = require("yargs/yargs");
 const {hideBin} = require("yargs/helpers");
 const fs = require("fs");
@@ -7,7 +8,7 @@ const { zonedTimeToUtc, utcToZonedTime, format } = require("date-fns-tz")
 let intra = null;
 let autologin = "";
 let user = null;
-let timezone = "Indian/Reunion"
+let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 let instance_location = "FR/RUN";
 let all, registered, modules, projects, kickoffs, followups, bootstraps;
 
@@ -16,12 +17,7 @@ let all, registered, modules, projects, kickoffs, followups, bootstraps;
  */
 const parseArgs = () => {
     const argv = yargs(hideBin(process.argv))
-        .option("autologin", {
-            alias: "auto",
-            type: "string",
-            description: "Epitech intranet autologin link (https://intra.epitech.eu/admin/autolog)",
-            default: undefined
-        }).option("all", {
+        .option("all", {
             alias: "a", type: "boolean", description: "Create ics file for all modules and projects", default: true
         }).option("registered", {
             alias: "r",
@@ -29,7 +25,7 @@ const parseArgs = () => {
             description: "Create ics file for registered modules and projects (works only if module/project option is set)",
             default: false
         }).option("timezone", {
-            alias: "tz", type: "string", description: "Your timezone like Indian/Reunion", default: "Indian/Reunion"
+            alias: "tz", type: "string", description: "Your timezone like Indian/Reunion (retrieved automatically)", default: undefined
         }).option("module", {
             alias: "m", type: "boolean", description: "Create ics file for all module", default: false
         }).option("project", {
@@ -41,16 +37,15 @@ const parseArgs = () => {
         }).option("bootstrap", {
             alias: "b", type: "boolean", description: "Create ics file for all bootstrap", default: false
         }).parse()
-    autologin = argv.autologin;
     all = argv.all;
     registered = argv.registered;
-    timezone = argv.timezone;
+    if (argv.timezone)
+        timezone = argv.timezone;
     modules = argv.module;
     projects = argv.project;
     kickoffs = argv.kickoff;
     followups = argv.followup;
     bootstraps = argv.bootstrap;
-    console.log("Autologin Link:", autologin);
     console.log("All projects and modules:", all);
     console.log("Only Registered:", registered);
     console.log("TimeZone:", timezone);
@@ -67,27 +62,29 @@ const parseArgs = () => {
  */
 const setupEpitechJs = async () => {
     intra = new RawIntra({
-        autologin: autologin
+        provider: new PuppeteerAuthProvider({
+            storageFilePath: "./storage.json",
+            verbose: true
+        }),
+        timezone: timezone
     });
-    let dashboard = await intra.getDashboard();
-    if (!dashboard || dashboard.message) {
-        console.error("Error:", dashboard.message);
+
+    try {
+        await intra.getDashboard();
+    } catch (e) {
+        console.log(e)
+        console.error("Error:", e.message);
         process.exit(1);
     }
 }
 
 /**
  * Retrieve all modules
- * @returns {Promise<RawModuleSummay[]>}
+ * @returns {Promise<RawModuleSummary[]>}
  */
 const getModules = async () => {
     user = await intra.getUser();
     instance_location = user.location;
-    let a = {};
-    a = intra;
-    a = a.request;
-    a = a.client;
-    a.defaults.headers.Cookie = `tz=${timezone}`;
     let module = await intra.filterCourses({
         scolaryears: [parseInt(user.scolaryear)]
     });
